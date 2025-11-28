@@ -1,1 +1,1 @@
-# parse_fit_file
+# Parse a .fit file from Garmin(or any other app)
