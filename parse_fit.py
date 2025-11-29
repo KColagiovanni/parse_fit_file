@@ -1,3 +1,5 @@
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Print all "Messages"(data points) and errors ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # from garmin_fit_sdk import Decoder, Stream
 #
 # stream = Stream.from_file('/home/kevin/Downloads/21091110845/21091110845_ACTIVITY.fit')
@@ -7,6 +9,7 @@
 # print(errors)
 # print(messages)
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Field Names for all messages ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 from garmin_fit_sdk import Decoder, Stream, Profile
 
 stream = Stream.from_file('/home/kevin/Downloads/21091110845/21091110845_ACTIVITY.fit')
