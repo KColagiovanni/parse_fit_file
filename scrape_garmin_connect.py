@@ -28,16 +28,27 @@ def get_strength_details(activity_id):
     driver = webdriver.Chrome()
     driver.get(activity_url)
 
+    print(driver.page_source[:4000])
+
     # Wait for the table to load
-    table = WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.TAG_NAME, "table"))
+    table = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (
+                # By.TAG_NAME,
+                # "table"
+                By.CSS_SELECTOR,
+                'table'
+            )
+        )
     )
 
     rows = table.find_elements(By.TAG_NAME, "tr")
     for row in rows:
         cols = row.find_elements(By.TAG_NAME, "td")
         # Process the data in each column
-        print(f'cols is: {cols}')
+        # print(f'cols is: {cols}')
+        cell_texts = [c.text.strip() for c in cols]
+        print(cell_texts)
 
     driver.quit()
 
