@@ -71,108 +71,50 @@
 #     get_strength_details('21091110845')
 
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-import time
-import requests
-import json
-import config
+from selenium.common.exceptions import StaleElementReferenceException
 
-LOGIN_URL = "https://connect.garmin.com/signin/?next=%2Fmodern%2F"
-DETAILS_URL = "https://connect.garmin.com/modern/proxy/activity-service/activity/{id}/details"
+def scrape_strength(activity_id):
+    url = f"https://connect.garmin.com/modern/activity/{activity_id}"
 
+    driver = webdriver.Chrome()
+    driver.get(url)
 
-def selenium_login():
-    print("🌐 Launching browser...")
+    wait = WebDriverWait(driver, 20)
 
-    options = Options()
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--start-maximized")
+    # The rep-counting table Garmin uses
+    TABLE_SELECTOR = "#repCountingActivityViewPlaceholder table"
 
-    driver = webdriver.Chrome(options=options)
-    driver.get(LOGIN_URL)
+    print("⏳ Waiting for strength table...")
 
-    # Wait for page JS to load
-    time.sleep(5)
-
-    print("🔐 Waiting for login fields...")
-
-    # USERNAME
-    user_box = WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, 'input[name="username"]'))
+    table = wait.until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, TABLE_SELECTOR))
     )
-    user_box.send_keys(config.GARMIN_USERNAME)
-    time.sleep(1)
 
-    # PASSWORD
-    pass_box = driver.find_element(By.CSS_SELECTOR, 'input[name="password"]')
-    pass_box.send_keys(config.GARMIN_PASSWORD)
-    time.sleep(1)
+    print("✅ Strength table found.")
 
-    # SUBMIT button
-    login_btn = driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
-    login_btn.click()
+    rows = table.find_elements(By.TAG_NAME, "tr")
 
-    print("⏳ Logging in... waiting for redirect to account...")
-    time.sleep(10)
+    parsed = []
+    for row in rows:
+        cols = [c.text.strip() for c in row.find_elements(By.TAG_NAME, "td")]
+        if any(cols):  # skip empty rows
+            parsed.append(cols)
+            print(cols)
 
-    # Check that login succeeded
-    if "signin" in driver.current_url:
-        print("❌ Login failed — still on signin page")
-    else:
-        print(f"✅ Login successful → {driver.current_url}")
-
-    cookies = driver.get_cookies()
     driver.quit()
-    return cookies
-
-
-def cookies_to_requests_session(cookies):
-    session = requests.Session()
-    for c in cookies:
-        session.cookies.set(c['name'], c['value'])
-    return session
-
-
-def fetch_strength_details(activity_id):
-    print("🔎 Logging into Garmin...")
-    cookies = selenium_login()
-    session = cookies_to_requests_session(cookies)
-
-    url = DETAILS_URL.format(id=activity_id)
-    print(f"📡 Requesting: {url}")
-
-    r = session.get(url)
-    print(f"Status: {r.status_code}")
-
-    try:
-        data = r.json()
-    except:
-        print("❌ Failed to parse JSON")
-        print(r.text[:600])
-        return
-
-    if "sets" not in data:
-        print("❌ No strength data returned. Activity private or session invalid.")
-        print(json.dumps(data, indent=2))
-        return
-
-    sets = data["sets"]
-
-    print(f"💪 Found {len(sets)} sets:\n")
-
-    for s in sets:
-        print(
-            f"{s.get('exerciseName','N/A'):25} | "
-            f"Reps {s.get('reps')} | "
-            f"Weight {s.get('weight')} | "
-            f"Volume {s.get('volume')}"
-        )
+    return parsed
 
 
 if __name__ == "__main__":
-    activity_id = input("Enter Garmin activity ID: ")
-    fetch_strength_details(activity_id)
+    activity_id = "21091110845"
+
+    while True:
+        try:
+            scrape_strength(activity_id)
+        except StaleElementReferenceException:
+            continue
+        else:
+            break
