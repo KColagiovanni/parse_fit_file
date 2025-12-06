@@ -147,32 +147,54 @@ def scrape_strength_activity(activity_id):
     driver = webdriver.Chrome(options=opts)
     driver.get(url)
 
-    # Wait until the exercise table appears
+    # Wait for table
     try:
         table = WebDriverWait(driver, 15).until(
             EC.presence_of_element_located(
-                (By.CSS_SELECTOR,
-                 "#repCountingActivityViewPlaceholder table")
+                (By.CSS_SELECTOR, "#repCountingActivityViewPlaceholder table")
             )
         )
     except Exception:
         driver.quit()
         raise RuntimeError("❌ No strength table found — Is this a strength workout?")
 
-    # Extract rows
     rows = table.find_elements(By.TAG_NAME, "tr")
 
-    # Parse header row
-    headers = [h.text.strip() for h in rows[0].find_elements(By.TAG_NAME, "th")]
+    # -------------------------------------
+    # Robust Header Extraction
+    # -------------------------------------
+    header_elems = rows[0].find_elements(By.TAG_NAME, "th")
+    headers = [h.text.strip() for h in header_elems if h.text.strip()]
 
-    # Parse data rows
+    print("DEBUG headers:", headers)
+
+    # If header row is empty → use fallback headers
+    if not headers:
+        headers = ["Set", "Exercise Name", "Time", "Rest", "Reps", "Weight", "Volume"]
+        print("⚠️ WARNING: No headers found. Using fallback:", headers)
+
+    # -------------------------------------
+    # Parse Data Rows (with mismatch handling)
+    # -------------------------------------
     sets = []
     for r in rows[1:]:
         cols = [c.text.strip() for c in r.find_elements(By.TAG_NAME, "td")]
-        print(f'cols is: {cols}')
-        sets.append(dict(zip(headers, cols)))
+        print("cols is:", cols)
 
-    print(f'sets is: {sets}')
+        if not cols:
+            continue
+
+        # If Garmin outputs more columns or fewer columns than headers, fix it
+        if len(cols) != len(headers):
+            print(f"⚠️ MISMATCH: {len(headers)} headers vs {len(cols)} cols")
+            print("Skipping this row:", cols)
+            continue
+
+        rowdict = dict(zip(headers, cols))
+        sets.append(rowdict)
+
+    print("\nsets is:", sets)
+
     driver.quit()
     return sets
 
