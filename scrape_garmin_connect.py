@@ -130,6 +130,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import StaleElementReferenceException
 
 
 # ----------------------------------
@@ -271,7 +272,14 @@ if __name__ == "__main__":
     activity_id = "21091110845"
 
     print(f"🔎 Scraping strength workout {activity_id}...")
-    sets = scrape_strength_activity(activity_id)
+    while True:
+        try:
+            sets = scrape_strength_activity(activity_id)
+            # scrape_strength(activity_id)
+        except StaleElementReferenceException:
+            continue
+        else:
+            break
 
     print(f"✅ Extracted {len(sets)} sets.")
     for s in sets[:3]:
