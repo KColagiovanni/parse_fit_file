@@ -83,7 +83,7 @@ def save_csv(activity_id, sets):
 
 # Save to SQLite.
 def save_sqlite(activity_id, sets):
-    conn = sqlite3.connect("exercises.db")
+    conn = sqlite3.connect("garmin_strength.db")
     cur = conn.cursor()
 
     # Create table if needed.
@@ -119,7 +119,7 @@ def save_sqlite(activity_id, sets):
 
     conn.commit()
     conn.close()
-    print(f"SQLite updated. Save to: exercises.db")
+    print(f"SQLite updated. Save as: garmin_strength.db")
 
 
 # Main
