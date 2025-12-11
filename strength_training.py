@@ -100,6 +100,44 @@ class StrengthTraining:
             )
         """)
 
+        # One row per Garmin activity.
+        cur.execute("""
+            CREATE TABLE workouts (
+                workout_id TEXT PRIMARY KEY,    -- Garmin activity ID
+                date TEXT,
+                start_time TEXT,
+                duration_seconds INTEGER,
+                total_volume REAL,
+                total_sets INTEGER,
+                total_reps INTEGER
+            )
+        """)
+
+        # Unique exercise names with an ID.
+        cur.execute("""
+            CREATE TABLE exercises (
+                exercise_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE
+            )
+        """)
+
+        # Every set performed in every workout (THOUSANDS of rows).
+        cur.execute("""
+            CREATE TABLE sets (
+                set_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                workout_id TEXT,
+                set_number INTEGER,
+                exercise_id INTEGER,
+                duration_seconds REAL,
+                rest_seconds REAL,
+                reps INTEGER,
+                weight REAL,
+                volume REAL,
+                FOREIGN KEY(workout_id) REFERENCES workouts(workout_id),
+                FOREIGN KEY(exercise_id) REFERENCES exercises(exercise_id)
+            )
+        """)
+
         # Insert set data
         for s in sets:
             cur.execute("""
